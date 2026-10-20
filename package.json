@@ -1,0 +1,78 @@
+{
+  "name": "glassnote",
+  "productName": "GlassNote",
+  "version": "1.0.0",
+  "description": "Premium Windows desktop notes with glass widgets",
+  "main": "src/main/main.js",
+  "private": true,
+  "author": "Abdullah",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@fontsource-variable/inter": "^5.3.0",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "playwright-core": "^1.64.1",
+    "vite": "^8.3.4"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "vite build && electron .",
+    "lint": "eslint .",
+    "test": "node --test --disable-warning=ExperimentalWarning \"test/*.test.js\"",
+    "test:e2e": "vite build && node --test --test-concurrency=1 \"test/e2e/*.e2e.js\"",
+    "icons": "electron scripts/make-icons.js",
+    "dist": "vite build && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.glassnote.app",
+    "productName": "GlassNote",
+    "copyright": "Copyright © 2026 Abdullah",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "src/main/**",
+      "src/preload/**",
+      "src/shared/**",
+      "dist/renderer/**",
+      "resources/**",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "resources/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GlassNote",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico",
+      "language": "1055",
+      "artifactName": "GlassNote-Setup-${version}.exe"
+    },
+    "electronLanguages": [
+      "tr",
+      "en-US"
+    ]
+  }
+}

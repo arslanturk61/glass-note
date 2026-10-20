@@ -1,0 +1,52 @@
+@import './tokens.css';
+@import './components.css';
+
+/* Widget: küçük, okunaklı, not rengiyle tonlanmış cam kart. */
+html.is-widget { --a-widget: calc(100% - var(--glass) * 32%); }
+html.is-widget body { background: transparent; }
+
+.widget {
+  --nc: var(--accent);
+  position: relative; height: 100vh; display: flex; flex-direction: column;
+  background:
+    linear-gradient(180deg, var(--sheen), transparent 36%),
+    color-mix(in srgb, var(--nc) 13%, color-mix(in srgb, var(--surface) var(--a-widget), transparent));
+  animation: fade-in 200ms ease-out;
+}
+.widget::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 3px;
+  background: linear-gradient(90deg, var(--nc), color-mix(in srgb, var(--nc) 40%, transparent));
+}
+.widget.opaque { background: color-mix(in srgb, var(--nc) 12%, var(--surface)); }
+.widget.missing { display: grid; place-items: center; color: var(--text-2); font-size: 0.9rem; padding: 20px; text-align: center; }
+
+.w-head {
+  display: flex; align-items: center; gap: 8px; height: 36px; flex: none; padding: 3px 6px 0 12px;
+  cursor: grab;
+}
+.w-head .dot { --c: var(--nc); }
+.w-head .w-cat { flex: 1; min-width: 0; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.02em; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-head .w-actions { display: flex; gap: 1px; opacity: 0.55; transition: opacity var(--t-fast); }
+.widget:hover .w-head .w-actions, .w-head .w-actions:focus-within { opacity: 1; }
+.w-head .icon-btn.on { opacity: 1; }
+
+.w-title {
+  flex: none; width: 100%; border: 0; background: transparent; padding: 2px 14px 4px;
+  font-size: 1.06rem; font-weight: 660; letter-spacing: -0.015em;
+}
+.w-title::placeholder { color: var(--text-3); }
+.w-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 2px 14px 12px; }
+.w-body .rich { font-size: 0.95rem; line-height: 1.55; min-height: calc(100% - 4px); }
+
+.w-toolbar {
+  flex: none; height: 0; overflow: hidden; padding: 0 8px; border-top: 1px solid transparent;
+  transition: height var(--t-med) var(--ease), border-color var(--t-med);
+}
+.widget:focus-within .w-toolbar { height: 38px; border-top-color: var(--border); }
+.w-toolbar .toolbar { height: 38px; flex-wrap: nowrap; overflow: hidden; }
+.w-toolbar .status { margin-left: auto; font-size: 0.72rem; color: var(--text-3); white-space: nowrap; padding-right: 4px; }
+.w-toolbar .status.error { color: var(--danger); font-weight: 600; }
+
+@media (max-width: 250px) {
+  .w-toolbar .status, .w-toolbar [data-cmd='link'], .w-toolbar .sep:last-of-type { display: none; }
+}
