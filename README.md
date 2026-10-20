@@ -34,3 +34,7 @@ npm run dev     # geliştirme modu
 npm test        # testler
 npm run dist    # kurulum paketi (release/ klasörüne)
 ```
+
+## Lisans
+
+[MIT](LICENSE) © 2026 Abdullah. Üçüncü taraf bileşenler için: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)

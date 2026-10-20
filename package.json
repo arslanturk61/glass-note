@@ -5,8 +5,8 @@
   "description": "Premium Windows desktop notes with glass widgets",
   "main": "src/main/main.js",
   "private": true,
-  "author": "Abdullah",
-  "license": "UNLICENSED",
+  "author": "Abdullah (arslanturk61)",
+  "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@fontsource-variable/inter": "^5.3.0",
@@ -30,7 +30,7 @@
   "build": {
     "appId": "com.glassnote.app",
     "productName": "GlassNote",
-    "copyright": "Copyright © 2026 Abdullah",
+    "copyright": "Copyright © 2026 Abdullah (arslanturk61)",
     "directories": {
       "output": "release",
       "buildResources": "resources"
@@ -41,7 +41,9 @@
       "src/shared/**",
       "dist/renderer/**",
       "resources/**",
-      "package.json"
+      "package.json",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
     ],
     "asarUnpack": [
       "resources/**"
@@ -74,5 +76,9 @@
       "tr",
       "en-US"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arslanturk61/glass-note.git"
   }
 }
