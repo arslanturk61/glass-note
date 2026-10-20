@@ -4,9 +4,9 @@
 
 const ALLOWED = {
   B: [], STRONG: [], I: [], EM: [], U: [], S: [], STRIKE: [],
-  P: [], DIV: [], BR: [], UL: ['data-type'], OL: [], LI: ['data-checked'], A: ['href'],
+  P: [], DIV: [], BR: [], H1: [], H2: [], H3: [], H4: [], H5: [], H6: [], UL: ['data-type'], OL: [], LI: ['data-checked'], A: ['href'],
 };
-const RENAME = { STRONG: 'B', EM: 'I', STRIKE: 'S', P: 'DIV' };
+const RENAME = { STRONG: 'B', EM: 'I', STRIKE: 'S', P: 'DIV', H4: 'H3', H5: 'H3', H6: 'H3' };
 // İçeriğiyle birlikte tamamen atılan öğeler.
 const DROP = new Set([
   'SCRIPT', 'STYLE', 'IFRAME', 'FRAME', 'FRAMESET', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'HEAD', 'TITLE',
@@ -14,7 +14,7 @@ const DROP = new Set([
   'CANVAS', 'PICTURE', 'SOURCE', 'TRACK', 'BASE', 'DIALOG', 'PORTAL', 'XMP', 'PLAINTEXT',
 ]);
 // Satır yapısını korumak için blok olarak açılan öğeler.
-const BLOCKISH = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'TABLE', 'TR', 'DL', 'DT', 'DD', 'FIGURE', 'ADDRESS', 'ASIDE', 'NAV', 'MAIN']);
+const BLOCKISH = new Set(['BLOCKQUOTE', 'PRE', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'TABLE', 'TR', 'DL', 'DT', 'DD', 'FIGURE', 'ADDRESS', 'ASIDE', 'NAV', 'MAIN']);
 
 const SAFE_URL = /^(https?:|mailto:)/i;
 

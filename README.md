@@ -5,23 +5,27 @@ Tamamen çevrimdışı çalışır; notlarınız yalnızca kendi bilgisayarını
 
 ## Özellikler
 
-- Notlar, kategoriler, renkler, etiketler ve hatırlatmalar
+- Notlar, başlıklar (H1–H3), listeler, kategoriler, renkler, etiketler ve hatırlatmalar
 - Notları masaüstünde bağımsız **widget** olarak açma (her zaman üstte seçeneğiyle)
 - Hızlı arama, açık/koyu tema, otomatik kaydetme
 - Sistem tepsisi ve Windows ile birlikte başlatma
 - JSON olarak yedekleme ve geri yükleme
+- Otomatik güncelleme (ayarlardan kapatılabilir)
 
 ## Kurulum
 
-1. [Releases](../../releases/latest) sayfasından **`GlassNote-Setup-1.0.0.exe`** dosyasını indirin.
+1. [Releases](../../releases/latest) sayfasından en son **`GlassNote-Setup-x.y.z.exe`** dosyasını indirin.
 2. Dosyayı çalıştırın ve kurulumu tamamlayın.
 3. Windows "bilgisayarınız korundu" uyarısı verirse: **Ek bilgi › Yine de çalıştır**.
 
 Gereksinim: Windows 10 veya 11 (64 bit). Cam efekti Windows 11'de görünür.
 
+Yeni sürümler uygulama içinden otomatik indirilir ve uygulamadan çıkarken kurulur. Notlarınız güncellemelerde korunur.
+
 ## Kullanım
 
 - **Yeni not:** `Ctrl + N`
+- **Başlık:** Araç çubuğundaki H1/H2/H3 veya `Ctrl + Alt + 1/2/3`
 - **Widget yap:** Not kartına sağ tıklayın › *Masaüstünde widget olarak aç*
 - **Widget'ı taşı:** Üst şeritten sürükleyin
 - **Tamamen çıkış:** Sistem tepsisindeki simgeye sağ tıklayın › *Uygulamadan çık*

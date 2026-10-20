@@ -23,6 +23,7 @@ const EVENTS = new Set([
   'app:new-note',
   'app:show-settings',
   'app:flush',
+  'app:update-status',
 ]);
 
 contextBridge.exposeInMainWorld('glassnote', {
@@ -69,6 +70,9 @@ contextBridge.exposeInMainWorld('glassnote', {
     exportBackup: call('app:export'),
     pickImport: call('app:pickImport'),
     importBackup: call('app:import'),
+    updateStatus: call('app:updateStatus'),
+    checkUpdates: call('app:checkUpdates'),
+    installUpdate: call('app:installUpdate'),
   },
   on(event, callback) {
     if (!EVENTS.has(event) || typeof callback !== 'function') throw new Error(`Bilinmeyen olay: ${event}`);

@@ -14,6 +14,7 @@ export const state = {
   color: null,
   selectedId: null,
   page: 'notes', // notes | settings
+  update: { state: 'idle' },
 };
 
 const subscribers = new Set();

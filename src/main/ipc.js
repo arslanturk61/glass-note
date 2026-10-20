@@ -90,6 +90,10 @@ function registerIpc(ctx) {
     openAtLoginActual: ctx.loginItemActive(),
   }));
 
+  handle('app:updateStatus', () => ctx.updater.status());
+  handle('app:checkUpdates', () => ctx.updater.check());
+  handle('app:installUpdate', () => ctx.updater.install());
+
   handle('app:showMain', (e, opts) => {
     const noteId = opts?.noteId == null ? null : v.id(opts.noteId);
     ctx.showMain({ noteId });

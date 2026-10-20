@@ -15,6 +15,7 @@ const { createMainWindow, createWidgetManager, ensureVisible, placeWindow, sameR
 const { registerIpc, readBackupFile } = require('./ipc');
 const { createTray } = require('./tray');
 const { startReminders } = require('./reminders');
+const { createUpdater } = require('./updater');
 
 app.setAppUserModelId(APP_ID);
 
@@ -186,6 +187,7 @@ function bootstrap() {
     const val = ctx.store.settings.set(key, value);
     if (key === 'theme') nativeTheme.themeSource = val;
     if (key === 'glassIntensity') updateMainMaterial();
+    if (key === 'autoUpdate') ctx.updater?.setEnabled(val);
     if (key !== 'lastView' && key !== 'mainWindowBounds') ctx.broadcast('settings:changed', ctx.store.settings.all());
     return val;
   };
@@ -246,6 +248,7 @@ function bootstrap() {
 
   app.on('will-quit', () => {
     ctx.reminders?.stop();
+    ctx.updater?.stop();
     ctx.tray?.destroy();
     try { ctx.store?.close(); } catch { /* yoksay */ }
   });
@@ -292,6 +295,7 @@ function bootstrap() {
     if (s.restoreWidgets) ctx.widgets.restore();
 
     ctx.reminders = startReminders(ctx);
+    ctx.updater = createUpdater(ctx);
 
     let t;
     const recheck = () => {

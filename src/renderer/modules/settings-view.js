@@ -147,6 +147,30 @@ export function createSettingsView() {
     }
   }
 
+  function updateText(u) {
+    switch (u.state) {
+      case 'checking': return 'Güncellemeler denetleniyor…';
+      case 'none': return 'En güncel sürümü kullanıyorsunuz.';
+      case 'downloading': return `Sürüm ${u.version} indiriliyor… %${u.percent ?? 0}`;
+      case 'ready': return `Sürüm ${u.version} indirildi. Yeniden başlattığınızda kurulacak.`;
+      case 'error': return u.message;
+      case 'disabled': return 'Otomatik güncelleme kapalı. İsterseniz elle denetleyebilirsiniz.';
+      case 'unsupported': return u.message;
+      default: return 'Güncellemeler denetlenmedi.';
+    }
+  }
+
+  function updateAction(u) {
+    if (u.state === 'unsupported') return null;
+    if (u.state === 'ready') {
+      return h('button', { class: 'btn sm primary', onclick: () => api.app.installUpdate().catch(reportError) }, 'Yeniden başlat ve kur');
+    }
+    return h('button', {
+      class: 'btn sm', disabled: u.state === 'checking' || u.state === 'downloading',
+      onclick: () => api.app.checkUpdates().catch(reportError),
+    }, 'Şimdi denetle');
+  }
+
   function renderSettings() {
     const s = state.settings;
     const info = state.info;
@@ -207,11 +231,18 @@ export function createSettingsView() {
             h('button', { class: 'btn sm', onclick: doImport }, icon('upload', 'sm'), 'İçe aktar')))),
 
       h('section', { class: 'settings-section' },
+        h('h2', null, 'Güncellemeler'),
+        h('div', { class: 'settings-card' },
+          row('Otomatik güncelleme', 'Yeni sürümler GitHub üzerinden denetlenir, arka planda indirilir ve uygulamadan çıkarken kurulur. Notlarınız hiçbir zaman gönderilmez.',
+            toggle('autoUpdate', 'Otomatik güncelleme')),
+          row(`Sürüm ${info.version}`, updateText(state.update), updateAction(state.update)))),
+
+      h('section', { class: 'settings-section' },
         h('div', { class: 'settings-card about' },
           h('div', { class: 'brand-logo', 'aria-hidden': 'true' }, icon('notes')),
           h('div', { class: 'text', style: { display: 'grid', gap: '3px' } },
             h('strong', null, `${info.name} ${info.version}`),
-            h('span', { class: 'hint' }, `Şema sürümü ${info.schemaVersion} · Tüm veriler bu bilgisayarda saklanır. Hesap, telemetri veya internet bağlantısı kullanılmaz.`)),
+            h('span', { class: 'hint' }, `Şema sürümü ${info.schemaVersion} · Tüm veriler bu bilgisayarda saklanır. Hesap veya telemetri yoktur; internete yalnızca güncelleme denetimi için çıkılır.`)),
           h('span', { style: { 'margin-left': 'auto', color: 'var(--success)' } }, icon('shield')))),
     ));
     el.scrollTop = keep;

@@ -110,6 +110,7 @@ const SETTING_RULES = {
   startupMode: (v) => ['window', 'tray'].includes(v),
   restoreWidgets: (v) => typeof v === 'boolean',
   autosave: (v) => typeof v === 'boolean',
+  autoUpdate: (v) => typeof v === 'boolean',
   widgetAlwaysOnTop: (v) => typeof v === 'boolean',
   restoreLastView: (v) => typeof v === 'boolean',
   sidebarCollapsed: (v) => typeof v === 'boolean',

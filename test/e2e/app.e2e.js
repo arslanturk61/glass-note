@@ -471,6 +471,55 @@ test('biçimlendirme: kalın, numaralı liste, görev listesi ve bağlantı ger�
   await quit(app);
 });
 
+test('başlıklar: H1/H2/H3 düğmeleri, kısayollar ve widget döngüsü kaydedilir', T, async () => {
+  const { app, win } = await launch(tmpDir());
+  const content = () => ctx(app, () => global.__glassnote.store.notes.list()[0].content);
+  await newNoteViaUi(win, 'Başlıklar', '');
+  await win.click('.editor-toolbar [data-cmd="h1"]');
+  await win.keyboard.type('Ana başlık');
+  await win.keyboard.press('Enter');
+  await win.keyboard.type('Alt başlık');
+  await win.keyboard.press('Control+Alt+Digit2');
+  await win.keyboard.press('End');
+  await win.keyboard.press('Enter');
+  await win.keyboard.type('normal satır');
+  await win.waitForSelector('.editor-toolbar [data-cmd="h1"][aria-pressed="false"]');
+  await waitFor(async () => /<h1>Ana başlık<\/h1><h2>Alt başlık<\/h2><div>normal satır<\/div>/.test(await content()))
+    .catch(async (e) => { throw new Error(`${e.message}: ${await content()}`); });
+
+  // Aynı başlığa tekrar basmak satırı normal metne döndürür.
+  await win.click('.rich h2');
+  await win.click('.editor-toolbar [data-cmd="h2"]');
+  await waitFor(async () => !/<h2>/.test(await content()));
+
+  // Yapıştırılan H4 başlığı H3 olarak korunur; betik temizlenir.
+  await win.click('.rich div:last-child');
+  await win.keyboard.press('End');
+  await win.evaluate(() => {
+    const dt = new DataTransfer();
+    dt.setData('text/html', '<h4>Yapıştırılan</h4><script>window.__x=1</script>');
+    document.querySelector('.rich').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  });
+  await waitFor(async () => /<h3>Yapıştırılan<\/h3>/.test(await content()));
+  assert.ok(!/script/.test(await content()));
+
+  // Widget: tek "H" düğmesi H1 → H2 → H3 → normal döngüsü yapar.
+  const id = await ctx(app, () => global.__glassnote.createNote({ title: 'W', content: '<div>satır</div>' }).id);
+  await ctx(app, (_e, nid) => global.__glassnote.widgets.open(nid), id);
+  const w = await pageFor(app, `widget.html?id=${id}`);
+  await w.waitForSelector('.w-title');
+  assert.equal(await w.locator('.w-toolbar [data-cmd="h1"]').count(), 0, 'widget kompakt araç çubuğu kullanmalı');
+  await w.click('.rich div');
+  const widgetHtml = () => ctx(app, (_e, nid) => global.__glassnote.store.notes.get(nid).content, id);
+  for (const tag of ['h1', 'h2', 'h3']) {
+    await w.click('.w-toolbar [data-cmd="heading"]');
+    await waitFor(async () => (await widgetHtml()).startsWith(`<${tag}>satır`));
+  }
+  await w.click('.w-toolbar [data-cmd="heading"]');
+  await waitFor(async () => (await widgetHtml()).startsWith('<div>satır'));
+  await quit(app);
+});
+
 test('Windows ile başlatıldığında "tepside başlat" tercihi ana pencereyi açmaz', T, async () => {
   const ud = tmpDir();
   let { app } = await launch(ud);

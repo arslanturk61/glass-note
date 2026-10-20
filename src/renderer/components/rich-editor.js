@@ -2,6 +2,15 @@ import { h } from './dom.js';
 import { icon } from './icons.js';
 import { sanitizeHtml, plainTextToHtml, safeHref } from './sanitize.js';
 
+const HEADINGS = [
+  { cmd: 'h1', text: 'H1', label: 'Başlık 1 (Ctrl+Alt+1)' },
+  { cmd: 'h2', text: 'H2', label: 'Başlık 2 (Ctrl+Alt+2)' },
+  { cmd: 'h3', text: 'H3', label: 'Başlık 3 (Ctrl+Alt+3)' },
+  'sep',
+];
+// Dar alanlar (widget) için tek düğme: Normal → H1 → H2 → H3 → Normal
+const HEADING_CYCLE = [{ cmd: 'heading', text: 'H', label: 'Başlık (tıkladıkça H1 › H2 › H3 › normal metin)' }, 'sep'];
+
 const TOOLS = [
   { cmd: 'bold', icon: 'bold', label: 'Kalın (Ctrl+B)' },
   { cmd: 'italic', icon: 'italic', label: 'İtalik (Ctrl+I)' },
@@ -16,7 +25,7 @@ const TOOLS = [
 
 // contenteditable tabanlı, bilinçli olarak sade bir editör.
 // askLink(currentHref) -> Promise<string|null>  ('' = bağlantıyı kaldır)
-export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChange, askLink, openLink }) {
+export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChange, askLink, openLink, compact = false }) {
   const el = h('div', {
     class: 'rich', contenteditable: 'true', role: 'textbox', 'aria-multiline': 'true',
     'aria-label': 'Not içeriği', 'data-placeholder': placeholder, spellcheck: 'true',
@@ -51,6 +60,16 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
     document.execCommand(cmd, false, value);
   }
 
+  function currentHeading() {
+    return closest('H1') ?? closest('H2') ?? closest('H3');
+  }
+
+  // Aynı başlığa tekrar basmak satırı normal metne çevirir.
+  function setBlock(tag) {
+    const cur = currentHeading()?.tagName.toLowerCase() ?? 'div';
+    exec('formatBlock', tag === cur ? 'div' : tag);
+  }
+
   function currentList() {
     const li = closest('LI');
     return li ? li.parentElement : null;
@@ -60,6 +79,20 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
     const list = currentList();
     const isChecklist = list?.tagName === 'UL' && list.dataset.type === 'checklist';
     switch (cmd) {
+      case 'h1':
+      case 'h2':
+      case 'h3':
+        setBlock(cmd);
+        break;
+      case 'paragraph':
+        exec('formatBlock', 'div');
+        break;
+      case 'heading': {
+        const order = ['div', 'h1', 'h2', 'h3'];
+        const cur = currentHeading()?.tagName.toLowerCase() ?? 'div';
+        exec('formatBlock', order[(order.indexOf(cur) + 1) % order.length]);
+        break;
+      }
       case 'bold':
       case 'italic':
       case 'underline':
@@ -138,7 +171,12 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
     const sel = getSelection();
     const active = sel.rangeCount && inEditor(sel.anchorNode);
     const list = active ? currentList() : null;
+    const heading = active ? currentHeading()?.tagName.toLowerCase() : null;
     const state = {
+      h1: heading === 'h1',
+      h2: heading === 'h2',
+      h3: heading === 'h3',
+      heading: !!heading,
       bold: active && document.queryCommandState('bold'),
       italic: active && document.queryCommandState('italic'),
       underline: active && document.queryCommandState('underline'),
@@ -163,6 +201,12 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       run('link');
+    }
+    // Ctrl+Alt+1/2/3 başlık, Ctrl+Alt+0 normal metin (e.code klavye düzeninden bağımsız).
+    if (e.ctrlKey && e.altKey && /^Digit[0-3]$/.test(e.code)) {
+      e.preventDefault();
+      const n = e.code.slice(-1);
+      run(n === '0' ? 'paragraph' : `h${n}`);
     }
   });
 
@@ -209,13 +253,13 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
 
   function toolbar() {
     return h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': 'Biçimlendirme' },
-      TOOLS.map((t) => {
+      [...(compact ? HEADING_CYCLE : HEADINGS), ...TOOLS].map((t) => {
         if (t === 'sep') return h('span', { class: 'sep', 'aria-hidden': 'true' });
         const b = h('button', {
-          class: 'icon-btn sm', type: 'button', title: t.label, 'aria-label': t.label, 'aria-pressed': 'false', dataset: { cmd: t.cmd },
+          class: `icon-btn sm${t.text ? ' text-btn' : ''}`, type: 'button', title: t.label, 'aria-label': t.label, 'aria-pressed': 'false', dataset: { cmd: t.cmd },
           onmousedown: (e) => e.preventDefault(), // editörün odağını ve seçimini koru
           onclick: () => run(t.cmd),
-        }, icon(t.icon, 'sm'));
+        }, t.text ?? icon(t.icon, 'sm'));
         buttons.set(t.cmd, b);
         return b;
       }));

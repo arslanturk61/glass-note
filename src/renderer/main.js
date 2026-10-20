@@ -22,6 +22,7 @@ async function init() {
   upsertNotes(notes);
   setCategories(categories);
   state.widgetIds = new Set(widgetIds);
+  state.update = await api.app.updateStatus();
   document.title = info.name;
 
   const lv = settings.restoreLastView ? settings.lastView : null;
@@ -232,6 +233,17 @@ async function init() {
   api.on('app:new-note', () => newNote());
   api.on('app:show-settings', () => openSettings());
   api.on('app:flush', () => editor.flush());
+  api.on('app:update-status', (u) => {
+    const becameReady = u.state === 'ready' && state.update.state !== 'ready';
+    state.update = u;
+    if (becameReady) {
+      toast(`${state.info.name} ${u.version} indirildi`, {
+        duration: 15_000,
+        action: { label: 'Yeniden başlat', onClick: () => api.app.installUpdate().catch(reportError) },
+      });
+    }
+    if (state.page === 'settings') render();
+  });
 
   window.addEventListener('beforeunload', () => editor.flushSync());
   document.addEventListener('visibilitychange', () => { if (document.hidden) editor.flush(); });

@@ -29,6 +29,7 @@ async function init() {
 
   const editor = createRichEditor({
     placeholder: 'Not yazın…',
+    compact: true,
     onChange: () => queue({ content: editor.getHTML() }),
     askLink: (current) => promptDialog({
       title: current ? 'Bağlantıyı düzenle' : 'Bağlantı ekle',

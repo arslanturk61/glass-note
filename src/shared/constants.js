@@ -42,6 +42,7 @@ const DEFAULT_SETTINGS = {
   startupMode: 'window', // window | tray (yalnızca Windows ile başlatıldığında)
   restoreWidgets: true,
   autosave: true,
+  autoUpdate: true,
   widgetAlwaysOnTop: false,
   restoreLastView: true,
   sidebarCollapsed: false,
