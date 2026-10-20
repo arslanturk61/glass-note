@@ -16,6 +16,7 @@ const { registerIpc, readBackupFile } = require('./ipc');
 const { createTray } = require('./tray');
 const { startReminders } = require('./reminders');
 const { createUpdater } = require('./updater');
+const speech = require('./speech');
 
 app.setAppUserModelId(APP_ID);
 
@@ -301,6 +302,7 @@ function bootstrap() {
 
     ctx.reminders = startReminders(ctx);
     ctx.updater = createUpdater(ctx);
+    speech.cleanupStale();
 
     let t;
     const recheck = () => {

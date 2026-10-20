@@ -75,4 +75,18 @@ function transcribe(data) {
   return job;
 }
 
-module.exports = { available, transcribe };
+// Çökme veya zorla kapatma sonrası kalmış olabilecek geçici ses dosyalarını siler.
+function cleanupStale(maxAgeMs = 10 * 60 * 1000) {
+  try {
+    const tmp = os.tmpdir();
+    for (const f of fs.readdirSync(tmp)) {
+      if (!/^glassnote-stt-[\w-]+\.wav$/.test(f)) continue;
+      const p = path.join(tmp, f);
+      if (Date.now() - fs.statSync(p).mtimeMs > maxAgeMs) fs.rmSync(p, { force: true });
+    }
+  } catch {
+    // temizlik başarısız olursa uygulama yine de çalışır
+  }
+}
+
+module.exports = { available, transcribe, cleanupStale };
