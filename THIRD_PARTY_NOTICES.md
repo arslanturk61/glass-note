@@ -1,6 +1,6 @@
 # Üçüncü taraf lisansları
 
-GlassNote aşağıdaki bileşeni uygulama paketine dahil eder.
+GlassNote aşağıdaki bileşenleri uygulama paketine dahil eder.
 
 ## Inter yazı tipi
 
@@ -101,5 +101,16 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 ```
+
+## whisper.cpp (çevrimdışı konuşma tanıma)
+
+Kaynak: https://github.com/ggml-org/whisper.cpp — MIT Lisansı,
+Copyright (c) 2023-2026 The ggml authors. Lisans metninin tamamı kurulum klasöründe
+`resources\whisper\LICENSE-whisper.cpp.txt` dosyasındadır.
+
+## Whisper modeli (ggml-base-q8_0)
+
+Kaynak: https://github.com/openai/whisper — MIT Lisansı, Copyright (c) 2022 OpenAI.
+ggml biçimine dönüştürülmüş hâli: https://huggingface.co/ggerganov/whisper.cpp
 
 Electron ve Chromium lisans metinleri kurulum klasöründe `LICENSE.electron.txt` ve `LICENSES.chromium.html` dosyalarında yer alır.

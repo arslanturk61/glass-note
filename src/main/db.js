@@ -63,6 +63,10 @@ const MIGRATIONS = [
     updated_at TEXT NOT NULL
   );
   `,
+  // v2 (1.2.0): widget'ı masaüstü katmanına sabitleme
+  `
+  ALTER TABLE widget_states ADD COLUMN desktop_pinned INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 const now = () => new Date().toISOString();
@@ -101,6 +105,7 @@ function rowToWidget(r) {
     height: r.height,
     is_open: !!r.is_open,
     always_on_top: !!r.always_on_top,
+    desktop_pinned: !!r.desktop_pinned,
     opacity: r.opacity,
     glass: !!r.glass,
     updated_at: r.updated_at,
@@ -388,14 +393,14 @@ function openStore(dbPath) {
     },
     list: () => q.widgets.all().map(rowToWidget),
     save(noteId, s) {
-      const cur = widgets.get(noteId) ?? { x: null, y: null, width: 300, height: 320, is_open: false, always_on_top: false, opacity: 1, glass: true };
+      const cur = widgets.get(noteId) ?? { x: null, y: null, width: 300, height: 320, is_open: false, always_on_top: false, desktop_pinned: false, opacity: 1, glass: true };
       const n = { ...cur, ...s };
-      db.prepare(`INSERT INTO widget_states (note_id, x, y, width, height, is_open, always_on_top, opacity, glass, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      db.prepare(`INSERT INTO widget_states (note_id, x, y, width, height, is_open, always_on_top, desktop_pinned, opacity, glass, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(note_id) DO UPDATE SET x = excluded.x, y = excluded.y, width = excluded.width, height = excluded.height,
-          is_open = excluded.is_open, always_on_top = excluded.always_on_top, opacity = excluded.opacity, glass = excluded.glass,
-          updated_at = excluded.updated_at`)
-        .run(noteId, n.x, n.y, n.width, n.height, b(n.is_open), b(n.always_on_top), n.opacity, b(n.glass), now());
+          is_open = excluded.is_open, always_on_top = excluded.always_on_top, desktop_pinned = excluded.desktop_pinned,
+          opacity = excluded.opacity, glass = excluded.glass, updated_at = excluded.updated_at`)
+        .run(noteId, n.x, n.y, n.width, n.height, b(n.is_open), b(n.always_on_top), b(n.desktop_pinned), n.opacity, b(n.glass), now());
       return widgets.get(noteId);
     },
   };

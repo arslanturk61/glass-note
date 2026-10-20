@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld('glassnote', {
     get: call('settings:get'),
     set: call('settings:set'),
   },
+  speech: {
+    available: call('speech:available'),
+    transcribe: call('speech:transcribe'),
+  },
   widgets: {
     open: call('widgets:open'),
     close: call('widgets:close'),
@@ -61,6 +65,7 @@ contextBridge.exposeInMainWorld('glassnote', {
     menu: call('widget:menu'),
     close: call('widget:close'),
     setAlwaysOnTop: call('widget:setAlwaysOnTop'),
+    setLayer: call('widget:setLayer'),
   },
   app: {
     info: call('app:info'),

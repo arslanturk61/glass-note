@@ -1,6 +1,9 @@
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { sanitizeHtml, plainTextToHtml, safeHref } from './sanitize.js';
+import { startRecording, dictationErrorMessage } from './dictation.js';
+
+const MAX_DICTATION_MS = 3 * 60 * 1000;
 
 const HEADINGS = [
   { cmd: 'h1', text: 'H1', label: 'Başlık 1 (Ctrl+Alt+1)' },
@@ -25,7 +28,8 @@ const TOOLS = [
 
 // contenteditable tabanlı, bilinçli olarak sade bir editör.
 // askLink(currentHref) -> Promise<string|null>  ('' = bağlantıyı kaldır)
-export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChange, askLink, openLink, compact = false }) {
+// dictation: { transcribe(wavArrayBuffer) -> Promise<string>, onError(msg) } verilirse mikrofon düğmesi eklenir.
+export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChange, askLink, openLink, compact = false, dictation = null }) {
   const el = h('div', {
     class: 'rich', contenteditable: 'true', role: 'textbox', 'aria-multiline': 'true',
     'aria-label': 'Not içeriği', 'data-placeholder': placeholder, spellcheck: 'true',
@@ -177,7 +181,7 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
       h2: heading === 'h2',
       h3: heading === 'h3',
       heading: !!heading,
-      bold: active && document.queryCommandState('bold'),
+      bold: active && !heading && document.queryCommandState('bold'), // başlıklar zaten kalın
       italic: active && document.queryCommandState('italic'),
       underline: active && document.queryCommandState('underline'),
       bullets: list?.tagName === 'UL' && list.dataset.type !== 'checklist',
@@ -251,8 +255,110 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
   const onSelection = () => refreshToolbar();
   document.addEventListener('selectionchange', onSelection);
 
+  // ------------------------------------------------------ konuşarak yazma
+  let rec = null;
+  let busy = false;
+  let recTimer = null;
+  let recStart = 0;
+  let savedRange = null;
+  let micBtn = null;
+
+  function setMic(mode) {
+    if (!micBtn) return;
+    micBtn.classList.toggle('recording', mode === 'recording');
+    micBtn.classList.toggle('busy', mode === 'busy');
+    micBtn.disabled = mode === 'busy';
+    const label = { idle: 'Konuşarak yaz', recording: 'Kaydı bitir ve yazıya çevir (Esc: iptal)', busy: 'Yazıya çevriliyor…' }[mode];
+    micBtn.title = label;
+    micBtn.setAttribute('aria-label', label);
+    micBtn.setAttribute('aria-pressed', String(mode === 'recording'));
+    micBtn.querySelector('.mic-time').textContent = '';
+  }
+
+  function onRecKey(e) {
+    if (e.key === 'Escape' && rec) {
+      e.preventDefault();
+      e.stopPropagation();
+      cancelDictation();
+    }
+  }
+
+  function cancelDictation() {
+    if (!rec) return;
+    rec.cancel();
+    rec = null;
+    clearInterval(recTimer);
+    document.removeEventListener('keydown', onRecKey, true);
+    setMic('idle');
+  }
+
+  function insertDictated(text) {
+    el.focus();
+    const sel = getSelection();
+    if (savedRange && el.contains(savedRange.startContainer)) {
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    } else {
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    const r = sel.getRangeAt(0);
+    const before = r.startContainer.nodeType === 3 ? r.startContainer.data.slice(0, r.startOffset) : '';
+    const prefix = before && !/\s$/.test(before) ? ' ' : '';
+    document.execCommand('insertText', false, `${prefix}${text} `);
+  }
+
+  async function finishDictation() {
+    clearInterval(recTimer);
+    document.removeEventListener('keydown', onRecKey, true);
+    const wav = rec.stop();
+    rec = null;
+    if (!wav) {
+      setMic('idle');
+      dictation.onError?.('Kayıt çok kısa. Düğmeye basıp konuşun, bitince tekrar basın.');
+      return;
+    }
+    busy = true;
+    setMic('busy');
+    try {
+      const text = await dictation.transcribe(wav);
+      if (text) insertDictated(text);
+      else dictation.onError?.('Konuşma algılanamadı.');
+    } catch (e) {
+      dictation.onError?.(dictationErrorMessage(e));
+    } finally {
+      busy = false;
+      setMic('idle');
+    }
+  }
+
+  async function toggleDictation() {
+    if (busy) return;
+    if (rec) return finishDictation();
+    const sel = getSelection();
+    savedRange = sel.rangeCount && inEditor(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null;
+    try {
+      rec = await startRecording();
+    } catch (e) {
+      dictation.onError?.(dictationErrorMessage(e));
+      return;
+    }
+    recStart = Date.now();
+    setMic('recording');
+    document.addEventListener('keydown', onRecKey, true);
+    recTimer = setInterval(() => {
+      const ms = Date.now() - recStart;
+      const s = Math.floor(ms / 1000);
+      micBtn.querySelector('.mic-time').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      if (ms >= MAX_DICTATION_MS) finishDictation();
+    }, 250);
+  }
+
   function toolbar() {
-    return h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': 'Biçimlendirme' },
+    const bar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': 'Biçimlendirme' },
       [...(compact ? HEADING_CYCLE : HEADINGS), ...TOOLS].map((t) => {
         if (t === 'sep') return h('span', { class: 'sep', 'aria-hidden': 'true' });
         const b = h('button', {
@@ -262,7 +368,17 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
         }, t.text ?? icon(t.icon, 'sm'));
         buttons.set(t.cmd, b);
         return b;
-      }));
+      }),
+      dictation ? [
+        h('span', { class: 'sep', 'aria-hidden': 'true' }),
+        (micBtn = h('button', {
+          class: 'icon-btn sm mic-btn', type: 'button', dataset: { cmd: 'dictate' },
+          onmousedown: (e) => e.preventDefault(),
+          onclick: () => toggleDictation(),
+        }, icon('mic', 'sm'), h('span', { class: 'mic-time', 'aria-live': 'off' }))),
+      ] : null);
+    if (micBtn) setMic('idle');
+    return bar;
   }
 
   return {
@@ -288,6 +404,10 @@ export function createRichEditor({ placeholder = 'Yazmaya başlayın…', onChan
       }
     },
     hasFocus: () => el.contains(document.activeElement) || document.activeElement === el,
-    destroy: () => document.removeEventListener('selectionchange', onSelection),
+    destroy: () => {
+      cancelDictation();
+      document.removeEventListener('selectionchange', onSelection);
+    },
+    cancelDictation,
   };
 }

@@ -7,6 +7,7 @@ const { ipcMain, dialog, shell, app, BrowserWindow } = require('electron');
 const { isAppUrl, supportsGlass, isDev } = require('./paths');
 const { APP_NAME, LIMITS, NOTE_PALETTE } = require('../shared/constants');
 const v = require('../shared/validate');
+const speech = require('./speech');
 
 function registerIpc(ctx) {
   const { store } = ctx;
@@ -71,11 +72,15 @@ function registerIpc(ctx) {
 
   handle('widget:init', (e) => {
     const noteId = widgetNote(e);
-    return { noteId, state: store.widgets.get(noteId), glassSupported: supportsGlass };
+    return { noteId, state: store.widgets.get(noteId), glassSupported: supportsGlass, desktopSupported: require('./desktop-layer').isSupported() };
   });
   handle('widget:menu', (e) => ctx.widgets.popupMenu(widgetNote(e), BrowserWindow.fromWebContents(e.sender)));
   handle('widget:close', (e) => ctx.widgets.close(widgetNote(e)));
   handle('widget:setAlwaysOnTop', (e, flag) => ctx.widgets.setAlwaysOnTop(widgetNote(e), v.bool(flag, 'alwaysOnTop')));
+  handle('widget:setLayer', (e, layer) => {
+    if (!['normal', 'top', 'desktop'].includes(layer)) throw new Error('Geçersiz katman');
+    ctx.widgets.setLayer(widgetNote(e), layer);
+  });
 
   // -------------------------------------------------------------------- app
   handle('app:info', () => ({
@@ -85,10 +90,18 @@ function registerIpc(ctx) {
     dataDir: app.getPath('userData'),
     schemaVersion: store.schemaVersion,
     supportsGlass,
+    speechAvailable: speech.available(),
     isDev,
     palette: NOTE_PALETTE,
     openAtLoginActual: ctx.loginItemActive(),
   }));
+
+  // ---------------------------------------------------------------- speech
+  handle('speech:available', () => speech.available());
+  handle('speech:transcribe', (e, data) => {
+    if (!(data instanceof ArrayBuffer) && !ArrayBuffer.isView(data)) throw new Error('Geçersiz ses verisi');
+    return speech.transcribe(data);
+  });
 
   handle('app:updateStatus', () => ctx.updater.status());
   handle('app:checkUpdates', () => ctx.updater.check());

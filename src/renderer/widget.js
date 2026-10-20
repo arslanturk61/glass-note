@@ -10,9 +10,10 @@ const root = document.getElementById('widget');
 const AUTOSAVE_DELAY = 600;
 
 async function init() {
-  const { noteId, state: initialState, glassSupported } = await api.widget.init();
+  const { noteId, state: initialState, glassSupported, desktopSupported } = await api.widget.init();
   let [note, settings, categories] = await Promise.all([api.notes.get(noteId), api.settings.get(), api.categories.list()]);
   let wstate = initialState;
+  const speechAvailable = await api.speech.available().catch(() => false);
   if (!note) {
     root.classList.add('missing');
     root.textContent = 'Bu not artık mevcut değil.';
@@ -39,6 +40,10 @@ async function init() {
       validate: (v) => (v.trim() && !safeHref(v) ? 'Yalnızca http, https ve e-posta bağlantıları.' : null),
     }),
     openLink: (href) => api.app.openExternal(href).catch(() => {}),
+    dictation: speechAvailable ? {
+      transcribe: (wav) => api.speech.transcribe(wav),
+      onError: (msg) => { setStatus('error', 'Ses hatası'); status.title = msg; },
+    } : null,
   });
 
   const onTopBtn = h('button', {
@@ -46,6 +51,13 @@ async function init() {
       await api.widget.setAlwaysOnTop(!wstate.always_on_top).catch(() => {});
     },
   }, icon('layers', 'sm'));
+  // Masaüstüne sabitle: widget diğer pencerelerin arkasında, masaüstü katmanında durur.
+  const deskBtn = h('button', {
+    class: 'icon-btn sm', 'aria-label': 'Masaüstüne sabitle', hidden: !desktopSupported,
+    onclick: async () => {
+      await api.widget.setLayer(wstate.desktop_pinned ? 'normal' : 'desktop').catch(() => {});
+    },
+  }, icon('desktop', 'sm'));
   const menuBtn = h('button', { class: 'icon-btn sm', title: 'Widget menüsü', 'aria-label': 'Widget menüsü', onclick: () => api.widget.menu() }, icon('more', 'sm'));
   const closeBtn = h('button', {
     class: 'icon-btn sm', title: "Widget'ı kapat (not silinmez)", 'aria-label': "Widget'ı kapat",
@@ -54,7 +66,7 @@ async function init() {
 
   root.append(
     // Sürükleme alanı yalnızca bu başlık şerididir; metin alanları ayrı tutulur.
-    h('header', { class: 'w-head drag', ondblclick: () => api.app.showMain({ noteId }) }, dot, catLabel, h('div', { class: 'w-actions' }, onTopBtn, menuBtn, closeBtn)),
+    h('header', { class: 'w-head drag', ondblclick: () => api.app.showMain({ noteId }) }, dot, catLabel, h('div', { class: 'w-actions' }, deskBtn, onTopBtn, menuBtn, closeBtn)),
     titleInput,
     h('div', { class: 'w-body', onclick: (e) => { if (e.target === e.currentTarget) editor.focus(true); } }, editor.el),
     h('footer', { class: 'w-toolbar' }, h('div', { class: 'toolbar-wrap', style: { display: 'flex', 'align-items': 'center' } }, editor.toolbar(), status)),
@@ -101,6 +113,11 @@ async function init() {
     onTopBtn.classList.toggle('on', wstate.always_on_top);
     onTopBtn.setAttribute('aria-pressed', String(wstate.always_on_top));
     onTopBtn.title = wstate.always_on_top ? 'Her zaman üstte: açık' : 'Her zaman üstte: kapalı';
+    deskBtn.classList.toggle('on', wstate.desktop_pinned);
+    deskBtn.setAttribute('aria-pressed', String(wstate.desktop_pinned));
+    deskBtn.title = wstate.desktop_pinned
+      ? 'Masaüstüne sabitli: diğer pencerelerin arkasında durur (kaldırmak için tıklayın)'
+      : 'Masaüstüne sabitle: diğer pencerelerin arkasında, masaüstünde dursun';
     document.title = note.title || 'Not';
   }
 

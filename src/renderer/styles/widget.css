@@ -42,7 +42,8 @@ html.is-widget body { background: transparent; }
   flex: none; height: 0; overflow: hidden; padding: 0 8px; border-top: 1px solid transparent;
   transition: height var(--t-med) var(--ease), border-color var(--t-med);
 }
-.widget:focus-within .w-toolbar { height: 38px; border-top-color: var(--border); }
+.widget:focus-within .w-toolbar,
+.widget:has(.mic-btn.recording, .mic-btn.busy) .w-toolbar { height: 38px; border-top-color: var(--border); }
 .w-toolbar .toolbar { height: 38px; flex-wrap: nowrap; overflow: hidden; }
 .w-toolbar .status { margin-left: auto; font-size: 0.72rem; color: var(--text-3); white-space: nowrap; padding-right: 4px; }
 .w-toolbar .status.error { color: var(--danger); font-weight: 600; }

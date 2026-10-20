@@ -6,7 +6,8 @@ Tamamen çevrimdışı çalışır; notlarınız yalnızca kendi bilgisayarını
 ## Özellikler
 
 - Notlar, başlıklar (H1–H3), listeler, kategoriler, renkler, etiketler ve hatırlatmalar
-- Notları masaüstünde bağımsız **widget** olarak açma (her zaman üstte seçeneğiyle)
+- Notları masaüstünde bağımsız **widget** olarak açma: her zaman üstte veya **masaüstüne sabitli** (pencerelerin arkasında, `Win+D` ile görünür)
+- **Konuşarak yazma:** Mikrofon düğmesiyle Türkçe konuşmayı yazıya çevirme — tamamen çevrimdışı, ses bilgisayardan çıkmaz
 - Hızlı arama, açık/koyu tema, otomatik kaydetme
 - Sistem tepsisi ve Windows ile birlikte başlatma
 - JSON olarak yedekleme ve geri yükleme
@@ -28,12 +29,15 @@ Yeni sürümler uygulama içinden otomatik indirilir ve uygulamadan çıkarken k
 - **Başlık:** Araç çubuğundaki H1/H2/H3 veya `Ctrl + Alt + 1/2/3`
 - **Widget yap:** Not kartına sağ tıklayın › *Masaüstünde widget olarak aç*
 - **Widget'ı taşı:** Üst şeritten sürükleyin
+- **Masaüstüne sabitle:** Widget'taki ekran simgesi veya `⋯` menüsü
+- **Konuşarak yaz:** Mikrofon düğmesine basın, konuşun, bitince tekrar basın (`Esc` iptal)
 - **Tamamen çıkış:** Sistem tepsisindeki simgeye sağ tıklayın › *Uygulamadan çık*
 
 ## Geliştiriciler için
 
 ```bash
 npm install
+npm run fetch:whisper   # konuşma tanıma bileşenlerini indirir (~90 MB, SHA-256 doğrulamalı)
 npm run dev     # geliştirme modu
 npm test        # testler
 npm run dist    # kurulum paketi (release/ klasörüne)

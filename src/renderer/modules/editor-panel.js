@@ -39,6 +39,10 @@ export function createEditorPanel({ onClosed }) {
       validate: (v) => (v.trim() && !safeHref(v) ? 'Yalnızca http, https ve e-posta bağlantıları desteklenir.' : null),
     }),
     openLink: (href) => api.app.openExternal(href).catch(reportError),
+    dictation: state.info.speechAvailable ? {
+      transcribe: (wav) => api.speech.transcribe(wav),
+      onError: (msg) => toast(msg, { type: 'error' }),
+    } : null,
   });
 
   const el = h('aside', { class: 'editor-panel', 'aria-label': 'Not düzenleyici', 'aria-hidden': 'true' },

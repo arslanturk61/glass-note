@@ -293,6 +293,101 @@ test("widget: bağımsız pencere, her zaman üstte, düzenleme, konum/boyut kay
   await quit(app);
 });
 
+test("widget masaüstüne sabitlenir: pencerelerin arkasında kalır, Win+D'de görünür", T, async () => {
+  const koffi = require('koffi');
+  const u = koffi.load('user32.dll');
+  const FindWindowW = u.func('intptr_t __stdcall FindWindowW(const char16_t *, const char16_t *)');
+  const GetWindowLongPtrW = u.func('intptr_t __stdcall GetWindowLongPtrW(intptr_t, int)');
+  const GetWindow = u.func('intptr_t __stdcall GetWindow(intptr_t, uint32_t)');
+  const IsIconic = u.func('bool __stdcall IsIconic(intptr_t)');
+  const keybd = u.func('void __stdcall keybd_event(uint8_t, uint8_t, uint32_t, uintptr_t)');
+  const isAbove = (a, b) => { for (let h = GetWindow(b, 3), i = 0; h && i < 5000; h = GetWindow(h, 3), i++) if (h === a) return true; return false; };
+  const progman = FindWindowW('Progman', null);
+
+  const ud = tmpDir();
+  let { app } = await launch(ud);
+  const id = await ctx(app, () => global.__glassnote.createNote({ title: 'Masaüstü', content: '<div>arkada</div>' }).id);
+  await ctx(app, (_e, nid) => global.__glassnote.widgets.open(nid), id);
+  let w = await pageFor(app, `widget.html?id=${id}`);
+  await w.waitForSelector('.w-title');
+  const hwnd = () => ctx(app, (_e, nid) => Number(global.__glassnote.widgets.windowFor(nid).getNativeWindowHandle().readBigUInt64LE(0)), id);
+
+  await w.click('button[aria-label="Masaüstüne sabitle"]');
+  await w.waitForSelector('button[aria-label="Masaüstüne sabitle"][aria-pressed="true"]');
+  let h = await hwnd();
+  assert.equal(GetWindowLongPtrW(h, -8), progman, 'widget masaüstü penceresine bağlanmalı');
+  assert.equal((await ctx(app, (_e, nid) => global.__glassnote.store.widgets.get(nid), id)).desktop_pinned, true);
+
+  // Ana pencere öne gelince widget onun arkasında kalmalı, ama masaüstünün üstünde.
+  await ctx(app, () => { const m = global.__glassnote.mainWindow; m.showInactive(); m.moveTop(); });
+  await ctx(app, (_e, nid) => global.__glassnote.widgets.windowFor(nid).focus(), id);
+  await new Promise((r) => setTimeout(r, 400));
+  const mainH = await ctx(app, () => Number(global.__glassnote.mainWindow.getNativeWindowHandle().readBigUInt64LE(0)));
+  assert.ok(isAbove(mainH, h), 'widget tıklansa bile diğer pencerelerin arkasında kalmalı');
+  assert.ok(isAbove(h, progman), 'widget masaüstünün üstünde olmalı');
+
+  if (process.env.GLASSNOTE_E2E_WIND === '1') {
+    const winD = () => { keybd(0x5B, 0, 0, 0); keybd(0x44, 0, 0, 0); keybd(0x44, 0, 2, 0); keybd(0x5B, 0, 2, 0); };
+    winD();
+    await new Promise((r) => setTimeout(r, 1500));
+    const shown = !IsIconic(h) && isAbove(h, progman);
+    winD();
+    await new Promise((r) => setTimeout(r, 1200));
+    assert.ok(shown, "Win+D sırasında widget masaüstünde görünür kalmalı");
+  }
+
+  // Yeniden başlatınca sabitleme korunur.
+  await quit(app);
+  ({ app } = await launch(ud));
+  w = await pageFor(app, `widget.html?id=${id}`);
+  await w.waitForSelector('button[aria-label="Masaüstüne sabitle"][aria-pressed="true"]');
+  h = await hwnd();
+  assert.equal(GetWindowLongPtrW(h, -8), progman);
+
+  // "Her zaman üstte"ye geçmek masaüstü bağını kaldırır (iki mod birbirini dışlar).
+  await w.click('button[aria-label="Her zaman üstte"]');
+  await waitFor(async () => (await ctx(app, (_e, nid) => global.__glassnote.widgets.windowFor(nid).isAlwaysOnTop(), id)) === true);
+  assert.equal(GetWindowLongPtrW(h, -8), 0);
+  const st = await ctx(app, (_e, nid) => global.__glassnote.store.widgets.get(nid), id);
+  assert.deepEqual([st.always_on_top, st.desktop_pinned], [true, false]);
+  await quit(app);
+});
+
+test('konuşarak yazma: mikrofon kaydı çevrimdışı olarak yazıya çevrilip nota eklenir', T, async (t) => {
+  const dir = tmpDir();
+  const wav = path.join(dir, 'konusma.wav');
+  try {
+    execFileSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, '..', 'fixtures', 'tr-speech.ps1'),
+      '-Text', 'Yarın sabah müşteriyle toplantı var. İstanbul ofisine kargo gönderilecek.', '-Out', wav], { stdio: 'ignore' });
+  } catch {
+    t.skip('Türkçe Windows konuşma sesi (Microsoft Tolga) yüklü değil');
+    return;
+  }
+  const before = new Set(fs.readdirSync(os.tmpdir()).filter((f) => f.startsWith('glassnote-stt-')));
+  const { app, win } = await launch(dir, ['--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${wav}`]);
+  assert.equal(await win.evaluate(() => window.glassnote.speech.available()), true, 'whisper bileşenleri bulunmalı (npm run fetch:whisper)');
+
+  // Geçersiz ses verisi reddedilir.
+  const bad = await win.evaluate(() => window.glassnote.speech.transcribe(new ArrayBuffer(16)).then(() => 'kabul', (e) => e.message));
+  assert.notEqual(bad, 'kabul');
+
+  await newNoteViaUi(win, 'Sesli not', '');
+  await win.click('.editor-toolbar [data-cmd="dictate"]');
+  await win.waitForSelector('.editor-toolbar .mic-btn.recording');
+  await new Promise((r) => setTimeout(r, 6500));
+  await win.click('.editor-toolbar [data-cmd="dictate"]');
+  await win.waitForSelector('.editor-toolbar .mic-btn:not(.busy):not(.recording)', { timeout: 60_000 });
+  const text = await waitFor(async () => {
+    const n = await ctx(app, () => global.__glassnote.store.notes.list()[0]);
+    return n.content_text.length > 10 && n.content_text;
+  }, 15_000);
+  const lower = text.toLocaleLowerCase('tr');
+  assert.ok(['toplantı', 'müşteri', 'istanbul', 'kargo'].filter((w) => lower.includes(w)).length >= 2, `beklenmeyen çeviri: ${text}`);
+  const leftover = fs.readdirSync(os.tmpdir()).filter((f) => f.startsWith('glassnote-stt-') && !before.has(f));
+  assert.deepEqual(leftover, [], 'geçici ses dosyası silinmeli');
+  await quit(app);
+});
+
 test('sistem tepsisi: pencereyi tepsiye gizleme, widget göster/gizle, tamamen çıkış', T, async () => {
   const { app, win } = await launch(tmpDir());
   const items = await ctx(app, () => global.__glassnote.tray.items());
@@ -509,6 +604,7 @@ test('başlıklar: H1/H2/H3 düğmeleri, kısayollar ve widget döngüsü kayded
   const w = await pageFor(app, `widget.html?id=${id}`);
   await w.waitForSelector('.w-title');
   assert.equal(await w.locator('.w-toolbar [data-cmd="h1"]').count(), 0, 'widget kompakt araç çubuğu kullanmalı');
+  assert.equal(await w.locator('.w-toolbar [data-cmd="dictate"]').count(), 1, 'widget mikrofon düğmesi olmalı');
   await w.click('.rich div');
   const widgetHtml = () => ctx(app, (_e, nid) => global.__glassnote.store.notes.get(nid).content, id);
   for (const tag of ['h1', 'h2', 'h3']) {

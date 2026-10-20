@@ -4,6 +4,7 @@ const { BrowserWindow, screen, nativeTheme, Menu } = require('electron');
 const path = require('node:path');
 const { preloadPath, supportsGlass, loadPage, resourcesDir } = require('./paths');
 const { NOTE_PALETTE, APP_NAME } = require('../shared/constants');
+const desktopLayer = require('./desktop-layer');
 
 const ICON = path.join(resourcesDir, 'icon.ico');
 const HEADER_GRAB = 36; // widget başlık şeridinin yüksekliği (px)
@@ -133,6 +134,7 @@ function createMainWindow(ctx) {
 function createWidgetManager(ctx) {
   const wins = new Map(); // noteId -> BrowserWindow
   const byContents = new Map(); // webContents.id -> noteId
+  const detachers = new Map(); // noteId -> masaüstü katmanından çıkarma fonksiyonu
   let quitting = false;
 
   const openIds = () => [...wins.keys()];
@@ -157,7 +159,7 @@ function createWidgetManager(ctx) {
   function sendState(noteId) {
     const win = wins.get(noteId);
     const st = ctx.store.widgets.get(noteId);
-    if (win && st) win.webContents.send('widget:state', { ...st, glassSupported: supportsGlass });
+    if (win && st) win.webContents.send('widget:state', { ...st, glassSupported: supportsGlass, desktopSupported: desktopLayer.isSupported() });
   }
 
   function open(noteId, { focus = true } = {}) {
@@ -171,7 +173,7 @@ function createWidgetManager(ctx) {
     if (!note || note.deleted_at) throw new Error('Not bulunamadı');
     const s = ctx.store.settings.all();
     const prev = ctx.store.widgets.get(noteId);
-    const st = prev ?? { x: null, y: null, width: s.widgetWidth, height: s.widgetHeight, always_on_top: s.widgetAlwaysOnTop, opacity: 1, glass: true };
+    const st = prev ?? { x: null, y: null, width: s.widgetWidth, height: s.widgetHeight, always_on_top: s.widgetAlwaysOnTop, desktop_pinned: false, opacity: 1, glass: true };
     const b = st.x == null || st.y == null
       ? placeDefault(st.width, st.height)
       : ensureVisible({ x: st.x, y: st.y, width: st.width, height: st.height });
@@ -192,7 +194,7 @@ function createWidgetManager(ctx) {
       maximizable: false,
       minimizable: false,
       fullscreenable: false,
-      alwaysOnTop: st.always_on_top,
+      alwaysOnTop: st.always_on_top && !st.desktop_pinned,
       webPreferences: webPreferences(),
     });
     if (st.opacity < 1) win.setOpacity(st.opacity);
@@ -221,7 +223,12 @@ function createWidgetManager(ctx) {
 
     const wcId = win.webContents.id;
     win.on('close', () => saveBounds.flush());
+    if (st.desktop_pinned) {
+      const detach = desktopLayer.attach(win);
+      if (detach) detachers.set(noteId, detach);
+    }
     win.on('closed', () => {
+      detachers.delete(noteId);
       wins.delete(noteId);
       byContents.delete(wcId);
       // Uygulamadan çıkarken widget'lar "açık" olarak kalır ki geri yüklenebilsin.
@@ -244,12 +251,26 @@ function createWidgetManager(ctx) {
     }
   }
 
-  function setAlwaysOnTop(noteId, flag) {
+  // layer: 'normal' | 'top' (her zaman üstte) | 'desktop' (masaüstüne sabitli)
+  function setLayer(noteId, layer) {
+    if (layer === 'desktop' && !desktopLayer.isSupported()) throw new Error('Masaüstüne sabitleme bu sistemde desteklenmiyor');
     const win = wins.get(noteId);
-    ctx.store.widgets.save(noteId, { always_on_top: flag });
-    if (win) win.setAlwaysOnTop(flag);
+    ctx.store.widgets.save(noteId, { always_on_top: layer === 'top', desktop_pinned: layer === 'desktop' });
+    if (win) {
+      if (layer !== 'desktop' && detachers.has(noteId)) {
+        detachers.get(noteId)();
+        detachers.delete(noteId);
+      }
+      win.setAlwaysOnTop(layer === 'top');
+      if (layer === 'desktop' && !detachers.has(noteId)) {
+        const detach = desktopLayer.attach(win);
+        if (detach) detachers.set(noteId, detach);
+      }
+    }
     sendState(noteId);
   }
+
+  const setAlwaysOnTop = (noteId, flag) => setLayer(noteId, flag ? 'top' : 'normal');
 
   function setLook(noteId, patch) {
     const st = ctx.store.widgets.save(noteId, patch);
@@ -264,8 +285,14 @@ function createWidgetManager(ctx) {
     if (!note || !st) return;
     const cats = ctx.store.categories.list();
     const update = (patch) => ctx.updateNote(noteId, patch, null);
+    const layer = st.desktop_pinned ? 'desktop' : st.always_on_top ? 'top' : 'normal';
     const menu = Menu.buildFromTemplate([
-      { label: 'Her zaman üstte', type: 'checkbox', checked: st.always_on_top, click: () => setAlwaysOnTop(noteId, !st.always_on_top) },
+      { label: 'Normal pencere', type: 'radio', checked: layer === 'normal', click: () => setLayer(noteId, 'normal') },
+      { label: 'Her zaman üstte', type: 'radio', checked: layer === 'top', click: () => setLayer(noteId, 'top') },
+      {
+        label: 'Masaüstüne sabitle (pencerelerin arkasında)', type: 'radio', checked: layer === 'desktop',
+        enabled: desktopLayer.isSupported(), click: () => setLayer(noteId, 'desktop'),
+      },
       { type: 'separator' },
       {
         label: 'Renk',
@@ -313,6 +340,7 @@ function createWidgetManager(ctx) {
     windowFor: (noteId) => wins.get(noteId) ?? null,
     isOpen: (noteId) => wins.has(noteId),
     setAlwaysOnTop,
+    setLayer,
     setLook,
     popupMenu,
     sendState,
@@ -328,7 +356,8 @@ function createWidgetManager(ctx) {
       for (const [noteId, w] of wins) {
         w.showInactive();
         // Gizle/göster sonrası "her zaman üstte" tercihini yeniden uygula.
-        w.setAlwaysOnTop(!!ctx.store.widgets.get(noteId)?.always_on_top);
+        const st = ctx.store.widgets.get(noteId);
+        if (!st?.desktop_pinned) w.setAlwaysOnTop(!!st?.always_on_top);
       }
     },
     hideAll() { for (const w of wins.values()) w.hide(); },

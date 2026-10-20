@@ -17,13 +17,33 @@ function tmpDb() {
 test('migration sets schema version and is idempotent', () => {
   const p = tmpDb();
   const s1 = openStore(p);
-  assert.equal(s1.schemaVersion, 1);
+  assert.equal(s1.schemaVersion, 2);
   s1.close();
   const s2 = openStore(p);
   s2.close();
   const raw = new DatabaseSync(p);
-  assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 1);
+  assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 2);
   raw.close();
+});
+
+test('v1 veritabanı v2ye yükseltilirken notlar ve widget durumları korunur', () => {
+  const { MIGRATIONS } = require('../src/main/db');
+  const p = tmpDb();
+  const raw = new DatabaseSync(p);
+  raw.exec(MIGRATIONS[0]);
+  raw.exec('PRAGMA user_version = 1');
+  const t = new Date().toISOString();
+  raw.prepare("INSERT INTO notes (title, content, content_text, created_at, updated_at) VALUES ('Eski not', '<div>içerik</div>', 'içerik', ?, ?)").run(t, t);
+  raw.prepare('INSERT INTO widget_states (note_id, x, y, width, height, is_open, always_on_top, updated_at) VALUES (1, 10, 20, 300, 320, 1, 1, ?)').run(t);
+  raw.close();
+  const s = openStore(p);
+  assert.equal(s.notes.get(1).title, 'Eski not');
+  const w = s.widgets.get(1);
+  assert.equal(w.always_on_top, true);
+  assert.equal(w.desktop_pinned, false);
+  s.widgets.save(1, { desktop_pinned: true, always_on_top: false });
+  assert.equal(s.widgets.get(1).desktop_pinned, true);
+  s.close();
 });
 
 test('refuses to open a database from a newer app version', () => {

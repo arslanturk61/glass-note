@@ -264,7 +264,12 @@ function bootstrap() {
 
     Menu.setApplicationMenu(null);
     const ses = session.defaultSession;
-    ses.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+    // Yalnızca uygulamanın kendi sayfalarına ve yalnızca mikrofon (konuşarak yazma) izni.
+    ses.setPermissionRequestHandler((_wc, perm, cb, details) => {
+      const audioOnly = perm === 'media' && Array.isArray(details.mediaTypes)
+        && details.mediaTypes.length > 0 && details.mediaTypes.every((t) => t === 'audio');
+      cb(audioOnly && isAppUrl(details.requestingUrl));
+    });
 
     // Ağ kilidi: uygulama yalnızca kendi yerel dosyalarını (ve geliştirmede Vite
     // sunucusunu) yükleyebilir. Notlar hiçbir koşulda dışarı gönderilmez.

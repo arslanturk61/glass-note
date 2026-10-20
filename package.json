@@ -1,7 +1,7 @@
 {
   "name": "glassnote",
   "productName": "GlassNote",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Premium Windows desktop notes with glass widgets",
   "main": "src/main/main.js",
   "private": true,
@@ -25,7 +25,8 @@
     "test": "node --test --disable-warning=ExperimentalWarning \"test/*.test.js\"",
     "test:e2e": "vite build && node --test --test-concurrency=1 \"test/e2e/*.e2e.js\"",
     "icons": "electron scripts/make-icons.js",
-    "dist": "vite build && electron-builder --win nsis --x64 --publish never"
+    "dist": "node scripts/fetch-whisper.mjs && vite build && electron-builder --win nsis --x64 --publish never",
+    "fetch:whisper": "node scripts/fetch-whisper.mjs"
   },
   "build": {
     "appId": "com.glassnote.app",
@@ -40,13 +41,13 @@
       "src/preload/**",
       "src/shared/**",
       "dist/renderer/**",
-      "resources/**",
+      "resources/*.{png,ico}",
       "package.json",
       "LICENSE",
       "THIRD_PARTY_NOTICES.md"
     ],
     "asarUnpack": [
-      "resources/**"
+      "resources/*.{png,ico}"
     ],
     "win": {
       "target": [
@@ -83,6 +84,15 @@
         "repo": "glass-note",
         "releaseType": "release"
       }
+    ],
+    "extraResources": [
+      {
+        "from": "resources/whisper",
+        "to": "whisper",
+        "filter": [
+          "**/*"
+        ]
+      }
     ]
   },
   "repository": {
@@ -90,6 +100,7 @@
     "url": "https://github.com/arslanturk61/glass-note.git"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9"
+    "electron-updater": "^6.8.9",
+    "koffi": "^3.3.3"
   }
 }
