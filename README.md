@@ -43,6 +43,8 @@ npm test        # testler
 npm run dist    # kurulum paketi (release/ klasörüne)
 ```
 
+Mimari, modüller ve kodlama kuralları için: **[docs/proje-rehberi.md](docs/proje-rehberi.md)**
+
 ## Lisans
 
 [MIT](LICENSE) © 2026 Abdullah. Üçüncü taraf bileşenler için: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
