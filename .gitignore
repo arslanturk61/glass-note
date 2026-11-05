@@ -3,3 +3,6 @@ dist/
 release/
 *.log
 uygulama/resources/whisper/
+
+# Web sitesi ayrı (özel) bir depoda tutulur: arslanturk61/glass-note-web
+web-sitesi/

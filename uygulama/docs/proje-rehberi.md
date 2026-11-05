@@ -1,6 +1,6 @@
 # GlassNote — Proje Rehberi
 
-> **Yapay zeka ajanları ve geliştiriciler için giriş noktası.** Bu rehber depodaki `uygulama/` klasörünü anlatır; içindeki tüm yollar ve `npm` komutları bu klasöre göredir. Tanıtım web sitesi ayrı bir klasördedir: `../web-sitesi/` (`frontend/`, `backend/`). Bu dosyayı ve ihtiyacın olan `moduller/` belgesini oku; kaynağın tamamını taramana gerek yok. Belgeler v1.2.0 (şema v2) itibarıyla günceldir.
+> **Yapay zeka ajanları ve geliştiriciler için giriş noktası.** Bu rehber depodaki `uygulama/` klasörünü anlatır; içindeki tüm yollar ve `npm` komutları bu klasöre göredir. Tanıtım web sitesi ayrı (özel) bir depodadır. Bu dosyayı ve ihtiyacın olan `moduller/` belgesini oku; kaynağın tamamını taramana gerek yok. Belgeler v1.2.0 (şema v2) itibarıyla günceldir.
 
 ## 1. Özet
 GlassNote, Windows 10/11 için **çevrimdışı** çalışan, cam efektli (Windows 11 akrilik) bir masaüstü not uygulamasıdır. Notlar bağımsız **masaüstü widget'ları** olarak açılabilir (normal / her zaman üstte / masaüstüne sabitli). Kategoriler, renkler, etiketler, başlıklar, görev listeleri, hatırlatmalar, Türkçe **çevrimdışı konuşarak yazma**, sistem tepsisi, Windows ile başlatma, JSON yedek ve GitHub üzerinden otomatik güncelleme vardır.

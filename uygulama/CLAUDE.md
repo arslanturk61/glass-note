@@ -1,6 +1,6 @@
 # GlassNote masaüstü uygulaması — yapay zeka ajanları için
 
-Bu dosya `uygulama/` klasörü içindir; tüm yollar ve `npm` komutları bu klasöre göredir. Web sitesi ayrı: `../web-sitesi/`.
+Bu dosya `uygulama/` klasörü içindir; tüm yollar ve `npm` komutları bu klasöre göredir. Tanıtım web sitesi ayrı (özel) bir depodadır.
 
 Kaynağı taramadan önce **`docs/proje-rehberi.md`** dosyasını oku; ihtiyacın olan ayrıntı `docs/moduller/` altındaki ilgili belgededir (rehberdeki "Hızlı harita" tablosu hangi dosyaya bakacağını söyler).
 

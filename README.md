@@ -38,7 +38,8 @@ Yeni sürümler uygulama içinden otomatik indirilir ve uygulamadan çıkarken k
 | Klasör | İçerik |
 |---|---|
 | [`uygulama/`](uygulama/) | Windows masaüstü uygulaması (Electron) |
-| [`web-sitesi/`](web-sitesi/) | Tanıtım web sitesi: `frontend/` ve `backend/` |
+
+Tanıtım web sitesi ayrı bir depoda geliştirilmektedir.
 
 ## Geliştiriciler için
 
