@@ -43,7 +43,6 @@
       "dist/renderer/**",
       "resources/*.{png,ico}",
       "package.json",
-      "LICENSE",
       "THIRD_PARTY_NOTICES.md"
     ],
     "asarUnpack": [
@@ -93,11 +92,18 @@
           "**/*"
         ]
       }
+    ],
+    "extraFiles": [
+      {
+        "from": "../LICENSE",
+        "to": "LICENSE.txt"
+      }
     ]
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/arslanturk61/glass-note.git"
+    "url": "https://github.com/arslanturk61/glass-note.git",
+    "directory": "uygulama"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",

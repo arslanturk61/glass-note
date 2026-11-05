@@ -33,9 +33,19 @@ Yeni sürümler uygulama içinden otomatik indirilir ve uygulamadan çıkarken k
 - **Konuşarak yaz:** Mikrofon düğmesine basın, konuşun, bitince tekrar basın (`Esc` iptal)
 - **Tamamen çıkış:** Sistem tepsisindeki simgeye sağ tıklayın › *Uygulamadan çık*
 
+## Depo yapısı
+
+| Klasör | İçerik |
+|---|---|
+| [`uygulama/`](uygulama/) | Windows masaüstü uygulaması (Electron) |
+| [`web-sitesi/`](web-sitesi/) | Tanıtım web sitesi: `frontend/` ve `backend/` |
+
 ## Geliştiriciler için
 
+Uygulama komutları `uygulama/` klasöründe çalıştırılır:
+
 ```bash
+cd uygulama
 npm install
 npm run fetch:whisper   # konuşma tanıma bileşenlerini indirir (~90 MB, SHA-256 doğrulamalı)
 npm run dev     # geliştirme modu
@@ -43,8 +53,8 @@ npm test        # testler
 npm run dist    # kurulum paketi (release/ klasörüne)
 ```
 
-Mimari, modüller ve kodlama kuralları için: **[docs/proje-rehberi.md](docs/proje-rehberi.md)**
+Mimari, modüller ve kodlama kuralları için: **[uygulama/docs/proje-rehberi.md](uygulama/docs/proje-rehberi.md)**
 
 ## Lisans
 
-[MIT](LICENSE) © 2026 Abdullah. Üçüncü taraf bileşenler için: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+[MIT](LICENSE) © 2026 Abdullah. Üçüncü taraf bileşenler için: [uygulama/THIRD_PARTY_NOTICES.md](uygulama/THIRD_PARTY_NOTICES.md)

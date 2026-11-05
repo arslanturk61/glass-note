@@ -1,13 +1,13 @@
 # GlassNote — Proje Rehberi
 
-> **Yapay zeka ajanları ve geliştiriciler için giriş noktası.** Bu dosyayı ve ihtiyacın olan `moduller/` belgesini oku; kaynağın tamamını taramana gerek yok. Belgeler v1.2.0 (şema v2) itibarıyla günceldir.
+> **Yapay zeka ajanları ve geliştiriciler için giriş noktası.** Bu rehber depodaki `uygulama/` klasörünü anlatır; içindeki tüm yollar ve `npm` komutları bu klasöre göredir. Tanıtım web sitesi ayrı bir klasördedir: `../web-sitesi/` (`frontend/`, `backend/`). Bu dosyayı ve ihtiyacın olan `moduller/` belgesini oku; kaynağın tamamını taramana gerek yok. Belgeler v1.2.0 (şema v2) itibarıyla günceldir.
 
 ## 1. Özet
 GlassNote, Windows 10/11 için **çevrimdışı** çalışan, cam efektli (Windows 11 akrilik) bir masaüstü not uygulamasıdır. Notlar bağımsız **masaüstü widget'ları** olarak açılabilir (normal / her zaman üstte / masaüstüne sabitli). Kategoriler, renkler, etiketler, başlıklar, görev listeleri, hatırlatmalar, Türkçe **çevrimdışı konuşarak yazma**, sistem tepsisi, Windows ile başlatma, JSON yedek ve GitHub üzerinden otomatik güncelleme vardır.
 
 Temel ilkeler: veri yalnızca yerel SQLite'ta; hesap/telemetri yok; arayüz internete çıkamaz (yalnızca güncelleyici çıkar); her buton gerçek işlev görür; özellikler gerçek Electron üzerinde uçtan uca test edilir.
 
-- Depo: https://github.com/arslanturk61/glass-note · Lisans: MIT · Yazar: Abdullah (arslanturk61)
+- Depo: https://github.com/arslanturk61/glass-note (uygulama `uygulama/` alt klasöründe) · Lisans: MIT (`../LICENSE`) · Yazar: Abdullah (arslanturk61)
 - Yığın: Electron 44 (Node 24), Vanilla JS + Vite 8, `node:sqlite`, electron-builder (NSIS), electron-updater, koffi, whisper.cpp
 
 ## 2. Hızlı harita — "şunu değiştireceğim, nereye bakayım?"
@@ -122,6 +122,7 @@ Sürümler:
 
 ## 10. Komutlar
 ```bash
+cd uygulama
 npm install
 npm run fetch:whisper   # konuşma tanıma bileşenleri (dist bunu kendisi de çalıştırır)
 npm run dev             # geliştirme

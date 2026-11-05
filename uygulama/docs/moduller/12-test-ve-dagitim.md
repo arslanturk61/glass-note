@@ -1,6 +1,6 @@
 # 12 · Testler, betikler ve dağıtım
 
-## Komutlar (`package.json`)
+## Komutlar (`uygulama/package.json`, `uygulama/` klasöründe çalıştırılır)
 | Komut | Ne yapar |
 |---|---|
 | `npm run dev` | `scripts/dev.mjs`: Vite sunucusu (127.0.0.1:5173) + Electron |
@@ -25,7 +25,8 @@
 
 ## Paketleme (`package.json` › `build`)
 - NSIS, x64, kullanıcı başına (yönetici izni yok), klasör seçilebilir, Türkçe (`language: 1055`), ad `GlassNote-Setup-${version}.exe`, kaldırmada veri silinmez.
-- `files`: yalnızca `src/main`, `src/preload`, `src/shared`, `dist/renderer`, ikonlar, `LICENSE`, `THIRD_PARTY_NOTICES.md`.
+- `files`: yalnızca `src/main`, `src/preload`, `src/shared`, `dist/renderer`, ikonlar, `THIRD_PARTY_NOTICES.md`.
+- `extraFiles`: depo kökündeki `../LICENSE` kurulum klasörüne `LICENSE.txt` olarak kopyalanır (lisans GitHub'ın tanıması için kökte durur).
 - `asarUnpack` ikonlar (tepsi/bildirim gerçek dosya yolu ister); `extraResources` `resources/whisper` → `whisper/`.
 - `electronLanguages: ['tr','en-US']` (boyut).
 - Çalışma zamanı bağımlılıkları yalnızca `electron-updater` ve `koffi`.
